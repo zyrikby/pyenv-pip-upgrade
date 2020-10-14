@@ -1,6 +1,7 @@
 ## Description
 This is a [pyenv](https://github.com/pyenv/pyenv/) that allows you to update all packages in particular or all pyenv environments excluding *system*. It supports both *conda*- and *pip*-based environments.
 
+
 ## Usage
 If you want to update all packages in all pyenv environments, execute the following command
 
@@ -13,6 +14,9 @@ However, more often we need to update packages of particular environments. This 
 ```console
 $ pyenv pip-upgrade 3.9.0 3.9.0/envs/pyenv_test miniconda3-latest/envs/myenv
 ```
+
+The plugin supports autocompletion. Press `<TAB>` twice to see options. 
+
 
 ## Installation
 In order to install the plugin you need at first install and configure [*pyenv*](https://github.com/pyenv/pyenv/). Then, just execute the following command from your terminal:
