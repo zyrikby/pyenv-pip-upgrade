@@ -22,3 +22,11 @@ $ git clone https://github.com/zyrikby/pyenv-pip-upgrade.git $(pyenv root)/plugi
 ```
 
 This command will clone the repository of plugin into the *pyenv* plugins directory. After this, *pyenv* will be also responsible for updating the plugin to the latest version if it appears.
+
+
+## Inspiration
+The development of this plugin has been inspired by the following projects/articles:
+
+1. [pyenv-pip-update](https://github.com/massongit/pyenv-pip-update) --- a *pyenv* plugin to update all environments at once
+2. [stackoverflow answer](https://stackoverflow.com/a/3452888/1108213) --- stackoverflow answer how to update all packages using *pip*
+3. [Bash Strict Mode](http://redsymbol.net/articles/unofficial-bash-strict-mode/) --- article about bash strict mode
