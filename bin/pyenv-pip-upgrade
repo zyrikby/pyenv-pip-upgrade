@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Summary: Update packages in particular or all pyenv and conda environments
+# Summary: Update packages in all or paticular pyenv environments
 #
 # Usage: pyenv pip-upgrade <pyenv_env1> [<pyenv_env2> ...]
 #        pyenv pip-upgrade --all
