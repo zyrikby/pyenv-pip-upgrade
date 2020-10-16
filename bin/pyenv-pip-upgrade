@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Summary: One line, short description of a command
+# Summary: Update packages in all or paticular pyenv environments
 #
 # Usage: pyenv pip-upgrade <pyenv_env1> [<pyenv_env2> ...]
 #        pyenv pip-upgrade --all
@@ -19,12 +19,29 @@ IFS=$'\n\t'
 
 # functions
 function __msg_error () {
-  echo -e "\e[1;31m[ERROR]: ${1}\e[0m" >&2
+  printf '\e[1;31m[ERROR]: %s\n\e[0m' "${1}" >&2
 }
 
-
 function __msg_info () {
-  echo -e "\e[1;33m[INFO]: ${1}\e[0m"
+  printf '\e[1;33m[INFO]: %s\n\e[0m' "${1}"
+}
+
+function elementIn () {
+  local elem="$1"   # Save first argument in a variable
+  shift            # Shift all arguments to the left (original $1 gets lost)
+  local arr=("$@") # Rebuild the array with rest of arguments
+  if printf '%s\n' "${arr[@]}" | grep -q --line-regexp "${elem}"; then
+    return 0
+  fi
+  return 1
+}
+
+function pip_upgrade_packages () {
+  # https://stackoverflow.com/a/3452888/1108213
+  outdated_packages=( $( pip list --outdated --format=freeze 2>/dev/null | grep -v '^\-e' | cut -d = -f 1 ) )
+  for pck in "${outdated_packages[@]}"; do
+    pip install --upgrade "$pck"
+  done
 }
 
 
@@ -39,36 +56,42 @@ if [ "$1" = "--complete" ]; then
   exit
 fi
 
-# store input parameters to the array of strings
-arguments=( "$@" )
-pyenvs_to_update=()
 
-# check if the argument is equal to "--all"
-if [[ ${#arguments[@]} == 1 && "${arguments[0]}" == "--all" ]]; then
-  pyenvs_to_update=( "${pyenvs[@]}" )
-else
-  invalid_args=()
-  for arg in ${arguments[@]}; do
-    is_arg_valid_pyenv=false
-    for pyenv in ${pyenvs[@]}; do
-      if [[ $arg == $pyenv ]]; then
-        is_arg_valid_pyenv=true
-        break
+all_envs=false
+pyenvs_to_update=()
+invalid_args=()
+
+while [[ $# -gt 0 ]]; do
+  argument="$1"
+  case $argument in 
+    --all)
+      all_envs=true
+      shift
+      ;;
+    *) # unknown option - assume that this is pyenv environment name
+      # check if argument is among pyenv versions
+      # if printf '%s\n' "${pyenvs[@]}" | grep -q --line-regexp "${argument}"; then
+      if elementIn "${argument}" "${pyenvs[@]}"; then
+        pyenvs_to_update+=( "$argument" )
+      else
+        invalid_args+=( "$argument" )
       fi
-    done
-    [[ $is_arg_valid_pyenv == false ]] && invalid_args+=( "$arg" )
-  done
-  
-  if [[ ${#invalid_args[@]} > 0 ]]; then
-    __msg_error "Invalid environments entered: ${invalid_args[@]}"
-    pyenv-help pip-upgrade >&2
-    exit 1
-  fi
-  pyenvs_to_update=${arguments[@]}
+      shift # past argument
+      ;;
+  esac
+done
+
+if [[ $all_envs == true && ${#invalid_args[@]} == 0 && ${#pyenvs_to_update[@]} == 0 ]]; then
+  pyenvs_to_update=${pyenvs[@]}
 fi
 
+if [[ ${#invalid_args[@]} > 0 ]]; then
+  __msg_error "Invalid environments entered: `IFS=$' '; echo ${invalid_args[@]}`"
+  pyenv-help pip-upgrade >&2
+  exit 1
+fi
 
-__msg_info "Pyenvs to update: ${pyenvs_to_update[@]}"
+__msg_info "Pyenvs to update: `IFS=$' '; echo ${pyenvs_to_update[@]}`"
 for pyenv_to_update in ${pyenvs_to_update[@]}; do
   __msg_info "Updating packages of '${pyenv_to_update}'..."
   export PYENV_VERSION=${pyenv_to_update}
@@ -79,19 +102,10 @@ for pyenv_to_update in ${pyenvs_to_update[@]}; do
       __msg_info "Updating conda environment: ${pyenv_to_update}..."
       conda update --all
       # in conda there could be packages installed with pip
-      outdated_packages=( $( pip list --outdated --format=freeze 2>/dev/null | grep -v '^\-e' | cut -d = -f 1 ) )
-      __msg_info "Outdated packages: ${outdated_packages[@]}"
-      for pck in "${outdated_packages[@]}"; do
-        pip install --upgrade "$pck"
-      done
+      pip_upgrade_packages
   elif pip >/dev/null 2>&1; then
        __msg_info "Updating pip environment: ${pyenv_to_update}..."
-      # https://stackoverflow.com/a/3452888/1108213
-      outdated_packages=( $( pip list --outdated --format=freeze 2>/dev/null | grep -v '^\-e' | cut -d = -f 1 ) )
-      echo "${#outdated_packages[@]}"
-      for pck in "${outdated_packages[@]}"; do
-        pip install --upgrade "$pck"
-      done
+       pip_upgrade_packages
   else
       __msg_error "Neither conda nor pip environment is detected. Skipping it!"
   fi
