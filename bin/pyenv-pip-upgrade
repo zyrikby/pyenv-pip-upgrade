@@ -47,34 +47,40 @@ if [ "$1" = "--complete" ]; then
   exit
 fi
 
-# store input parameters to the array of strings
-arguments=( "$@" )
-pyenvs_to_update=()
 
-# check if the argument is equal to "--all"
-if [[ ${#arguments[@]} == 1 && "${arguments[0]}" == "--all" ]]; then
-  pyenvs_to_update=( "${pyenvs[@]}" )
+all_envs=false
+pyenvs_to_update=()
+invalid_args=()
+
+while [[ $# -gt 0 ]]; do
+  argument="$1"
+  case $argument in 
+    --all)
+      all_envs=true
+      shift
+      ;;
+    *) # unknown option - assume that this is pyenv environment name
+      # check if argument is among pyenv versions
+      # if printf '%s\n' "${pyenvs[@]}" | grep -q --line-regexp "${argument}"; then
+      if elementIn "${argument}" "${pyenvs[@]}"; then
+        pyenvs_to_update+=( "$argument" )
 else
-  invalid_args=()
-  for arg in ${arguments[@]}; do
-    is_arg_valid_pyenv=false
-    for pyenv in ${pyenvs[@]}; do
-      if [[ $arg == $pyenv ]]; then
-        is_arg_valid_pyenv=true
-        break
+        invalid_args+=( "$argument" )
       fi
-    done
-    [[ $is_arg_valid_pyenv == false ]] && invalid_args+=( "$arg" )
+      shift # past argument
+      ;;
+  esac
   done
   
+if [[ $all_envs == true && ${#invalid_args[@]} == 0 && ${#pyenvs_to_update[@]} == 0 ]]; then
+  pyenvs_to_update=${pyenvs[@]}
+fi
+
   if [[ ${#invalid_args[@]} > 0 ]]; then
-    __msg_error "Invalid environments entered: ${invalid_args[@]}"
+  __msg_error "Invalid environments entered: `IFS=$' '; echo ${invalid_args[@]}`"
     pyenv-help pip-upgrade >&2
     exit 1
   fi
-  pyenvs_to_update=${arguments[@]}
-fi
-
 
 __msg_info "Pyenvs to update: `IFS=$' '; ${pyenvs_to_update[@]}`"
 for pyenv_to_update in ${pyenvs_to_update[@]}; do
