@@ -36,6 +36,15 @@ function elementIn () {
   return 1
 }
 
+function pip_upgrade_packages () {
+  # https://stackoverflow.com/a/3452888/1108213
+  outdated_packages=( $( pip list --outdated --format=freeze 2>/dev/null | grep -v '^\-e' | cut -d = -f 1 ) )
+  for pck in "${outdated_packages[@]}"; do
+    pip install --upgrade "$pck"
+  done
+}
+
+
 # --bare - allows to skip system installation
 # --skip-aliases - skips environment aliases (speeding up updates by skipping aliases)
 pyenvs=( "$(pyenv versions --bare --skip-aliases)" )
@@ -64,23 +73,23 @@ while [[ $# -gt 0 ]]; do
       # if printf '%s\n' "${pyenvs[@]}" | grep -q --line-regexp "${argument}"; then
       if elementIn "${argument}" "${pyenvs[@]}"; then
         pyenvs_to_update+=( "$argument" )
-else
+      else
         invalid_args+=( "$argument" )
       fi
       shift # past argument
       ;;
   esac
-  done
-  
+done
+
 if [[ $all_envs == true && ${#invalid_args[@]} == 0 && ${#pyenvs_to_update[@]} == 0 ]]; then
   pyenvs_to_update=${pyenvs[@]}
 fi
 
-  if [[ ${#invalid_args[@]} > 0 ]]; then
+if [[ ${#invalid_args[@]} > 0 ]]; then
   __msg_error "Invalid environments entered: `IFS=$' '; echo ${invalid_args[@]}`"
-    pyenv-help pip-upgrade >&2
-    exit 1
-  fi
+  pyenv-help pip-upgrade >&2
+  exit 1
+fi
 
 __msg_info "Pyenvs to update: `IFS=$' '; echo ${pyenvs_to_update[@]}`"
 for pyenv_to_update in ${pyenvs_to_update[@]}; do
@@ -93,19 +102,10 @@ for pyenv_to_update in ${pyenvs_to_update[@]}; do
       __msg_info "Updating conda environment: ${pyenv_to_update}..."
       conda update --all
       # in conda there could be packages installed with pip
-      outdated_packages=( $( pip list --outdated --format=freeze 2>/dev/null | grep -v '^\-e' | cut -d = -f 1 ) )
-      __msg_info "Outdated packages: ${outdated_packages[@]}"
-      for pck in "${outdated_packages[@]}"; do
-        pip install --upgrade "$pck"
-      done
+      pip_upgrade_packages
   elif pip >/dev/null 2>&1; then
        __msg_info "Updating pip environment: ${pyenv_to_update}..."
-      # https://stackoverflow.com/a/3452888/1108213
-      outdated_packages=( $( pip list --outdated --format=freeze 2>/dev/null | grep -v '^\-e' | cut -d = -f 1 ) )
-      echo "${#outdated_packages[@]}"
-      for pck in "${outdated_packages[@]}"; do
-        pip install --upgrade "$pck"
-      done
+       pip_upgrade_packages
   else
       __msg_error "Neither conda nor pip environment is detected. Skipping it!"
   fi
