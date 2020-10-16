@@ -26,6 +26,15 @@ function __msg_info () {
   printf '\e[1;33m[INFO]: %s\n\e[0m' "${1}"
 }
 
+function elementIn () {
+  local elem="$1"   # Save first argument in a variable
+  shift            # Shift all arguments to the left (original $1 gets lost)
+  local arr=("$@") # Rebuild the array with rest of arguments
+  if printf '%s\n' "${arr[@]}" | grep -q --line-regexp "${elem}"; then
+    return 0
+  fi
+  return 1
+}
 
 # --bare - allows to skip system installation
 # --skip-aliases - skips environment aliases (speeding up updates by skipping aliases)
