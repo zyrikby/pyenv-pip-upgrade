@@ -68,7 +68,7 @@ else
 fi
 
 
-__msg_info "Pyenvs to update: ${pyenvs_to_update[@]}"
+__msg_info "Pyenvs to update: `IFS=$' '; ${pyenvs_to_update[@]}`"
 for pyenv_to_update in ${pyenvs_to_update[@]}; do
   __msg_info "Updating packages of '${pyenv_to_update}'..."
   export PYENV_VERSION=${pyenv_to_update}
