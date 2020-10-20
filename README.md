@@ -15,6 +15,10 @@ However, more often we need to update packages of particular environments. This 
 $ pyenv pip-upgrade 3.9.0 3.9.0/envs/pyenv_test miniconda3-latest/envs/myenv
 ```
 
+By default, the packages of an environment are updated using one `pip install --upgrade` command (`--serial` argument is default), i.e., if, e.g., the *cowsay* and *six* packages need to be updated, they will be updated using the `pip install --upgrade cowsay six` command. The new [***2020 pip resolver***](https://pip.pypa.io/en/stable/user_guide/#changes-to-the-pip-dependency-resolver-in-20-2-2020) will check dependencies of these packages, and if there are conflicts it will generate an error.
+
+However, it is possible to run update packages sequentially using `--sequential` *pip-upgrade* argument. In this case, the packages will be updated one by one, and the most recently updated package will override conflicting dependencies.
+
 The plugin supports autocompletion. Press `<TAB>` twice to see options. 
 
 
