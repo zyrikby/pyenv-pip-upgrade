@@ -51,7 +51,10 @@ function pip_upgrade_packages () {
 
 # --bare - allows to skip system installation
 # --skip-aliases - skips environment aliases (speeding up updates by skipping aliases)
-pyenvs=( "$(pyenv versions --bare --skip-aliases)" )
+pyenvs=()
+while IFS='' read -r line; do 
+  pyenvs+=("$line"); 
+done < <(pyenv versions --bare --skip-aliases)
 
 # Provide pyenv completions
 if [ "$1" = "--complete" ]; then
@@ -59,7 +62,6 @@ if [ "$1" = "--complete" ]; then
   echo "${pyenvs[@]}"
   exit
 fi
-
 
 all_envs=false
 pyenvs_to_update=()
@@ -90,12 +92,12 @@ if [[ $all_envs == true && ${#invalid_args[@]} == 0 && ${#pyenvs_to_update[@]} =
 fi
 
 if [[ ${#invalid_args[@]} -gt 0 ]]; then
-  __msg_error "Invalid environments entered: `IFS=$' '; echo ${invalid_args[@]}`"
+  __msg_error "Invalid environments entered: $(IFS=$' '; echo "${invalid_args[*]}")"
   pyenv-help pip-upgrade >&2
   exit 1
 fi
 
-__msg_info "Pyenvs to update: `IFS=$' '; echo ${pyenvs_to_update[@]}`"
+__msg_info "Pyenvs to update: $(IFS=$' '; echo "${pyenvs_to_update[*]}")"
 for pyenv_to_update in ${pyenvs_to_update[@]}; do
   __msg_info "Updating packages of '${pyenv_to_update}'..."
   export PYENV_VERSION=${pyenv_to_update}
