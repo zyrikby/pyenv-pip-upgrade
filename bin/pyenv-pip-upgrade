@@ -2,11 +2,16 @@
 #
 # Summary: Update packages in all or paticular pyenv environments
 #
-# Usage: pyenv pip-upgrade <pyenv_env1> [<pyenv_env2> ...]
-#        pyenv pip-upgrade --all
+# Usage: pyenv pip-upgrade [--serial|--sequential] <pyenv_env1> [<pyenv_env2> ...]
+#        pyenv pip-upgrade [--serial|--sequential] --all
 #
 # This command update all packages to the latest versions of particular or all 
 # pyenv environments excluding system.
+# 
+# ARGUMENTS: 
+#   --all - to update all environments
+#   --serial (default) - update all outdated packages using a single pip command
+#   --sequential - update all outdated packages one by one
 
 # setting bash strict mode
 set -o errexit 
@@ -42,10 +47,19 @@ function pip_upgrade_packages () {
   while IFS='' read -r line; do 
     outdated_packages+=("$line"); 
   done < <(pip list --outdated --format=freeze 2>/dev/null | grep -v '^\-e' | cut -d = -f 1)
-  
-  for pck in "${outdated_packages[@]}"; do
-    pip install --upgrade "$pck"
-  done
+  if [[ ${#outdated_packages[@]} -eq 0 ]]; then
+    __msg_info "Nothing to update in this environment..."
+    return
+  fi
+  if [[ "$strategy" == "--serial" ]]; then
+    __msg_info "Updating packages: $(IFS=$' '; echo "${outdated_packages[*]}")"
+    pip install --upgrade "${outdated_packages[@]}"
+  elif [[ "$strategy" == "--sequential" ]]; then
+    for pck in "${outdated_packages[@]}"; do
+      __msg_info "Updating package $pck..."
+      pip install --upgrade "$pck"
+    done
+  fi
 }
 
 
@@ -59,6 +73,7 @@ done < <(pyenv versions --bare --skip-aliases)
 # Provide pyenv completions
 if [ "$1" = "--complete" ]; then
   echo "--all" # add '--all' as completion option
+  echo "--serial" "--sequential"
   echo "${pyenvs[@]}"
   exit
 fi
@@ -72,6 +87,10 @@ while [[ $# -gt 0 ]]; do
   case $argument in 
     --all)
       all_envs=true
+      shift
+      ;;
+    --serial|--sequential)
+      strategy="$argument"
       shift
       ;;
     *) # unknown option - assume that this is pyenv environment name
