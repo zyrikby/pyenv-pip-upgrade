@@ -89,7 +89,7 @@ if [[ $all_envs == true && ${#invalid_args[@]} == 0 && ${#pyenvs_to_update[@]} =
   pyenvs_to_update=( "${pyenvs[@]}" )
 fi
 
-if [[ ${#invalid_args[@]} > 0 ]]; then
+if [[ ${#invalid_args[@]} -gt 0 ]]; then
   __msg_error "Invalid environments entered: `IFS=$' '; echo ${invalid_args[@]}`"
   pyenv-help pip-upgrade >&2
   exit 1
