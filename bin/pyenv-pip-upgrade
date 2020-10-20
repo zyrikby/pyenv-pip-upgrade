@@ -56,6 +56,7 @@ pyenvs=( "$(pyenv versions --bare --skip-aliases)" )
 # Provide pyenv completions
 if [ "$1" = "--complete" ]; then
   echo "--all" # add '--all' as completion option
+  # shellcheck disable=SC2068
   echo ${pyenvs[@]}
   exit
 fi
