@@ -2,15 +2,21 @@
 #
 # Summary: Update packages in all or paticular pyenv environments
 #
-# Usage: pyenv pip-upgrade [--serial|--sequential] <pyenv_env1> [<pyenv_env2> ...]
-#        pyenv pip-upgrade [--serial|--sequential] --all
+# Usage: pyenv pip-upgrade [OPTIONS] <pyenv_env1> [<pyenv_env2> ...]
+#        pyenv pip-upgrade [OPTIONS] --all
 #
 # This command update all packages to the latest versions of particular or all 
-# pyenv environments excluding system.
+# pyenv environments excluding system. By default, pip-upgrade update all 
+# outdated packages of an environment at once. New pip versions will generate an 
+# error if the environment contains packages with conflicting dependencies. In 
+# this case, you can add option '--sequential' to update packages sequentially, 
+# however, the lately updated package will have precedence in this case 
+# overriding the dependencies of the packages updated before.  
 # 
 # ARGUMENTS: 
 #   --all - to update all environments
-#   --serial (default) - update all outdated packages using a single pip command
+# 
+# OPTIONS:
 #   --sequential - update all outdated packages one by one
 
 # setting bash strict mode
@@ -51,10 +57,10 @@ function pip_upgrade_packages () {
     __msg_info "Nothing to update in this environment..."
     return
   fi
-  if [[ "$strategy" == "--serial" ]]; then
+  if [[ "$strategy" == "serial" ]]; then
     __msg_info "Updating packages: $(IFS=$' '; echo "${outdated_packages[*]}")"
     pip install --upgrade "${outdated_packages[@]}"
-  elif [[ "$strategy" == "--sequential" ]]; then
+  elif [[ "$strategy" == "sequential" ]]; then
     for pck in "${outdated_packages[@]}"; do
       __msg_info "Updating package $pck..."
       pip install --upgrade "$pck"
@@ -73,7 +79,7 @@ done < <(pyenv versions --bare --skip-aliases)
 # Provide pyenv completions
 if [ "$1" = "--complete" ]; then
   echo "--all" # add '--all' as completion option
-  echo "--serial" "--sequential"
+  echo "--sequential"
   echo "${pyenvs[@]}"
   exit
 fi
@@ -81,6 +87,7 @@ fi
 all_envs=false
 pyenvs_to_update=()
 invalid_args=()
+strategy="serial"
 
 while [[ $# -gt 0 ]]; do
   argument="$1"
@@ -89,8 +96,8 @@ while [[ $# -gt 0 ]]; do
       all_envs=true
       shift
       ;;
-    --serial|--sequential)
-      strategy="$argument"
+    --sequential)
+      strategy="${argument:2}"
       shift
       ;;
     *) # unknown option - assume that this is pyenv environment name
