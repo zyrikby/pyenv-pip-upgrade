@@ -1,5 +1,5 @@
 ## Description
-This is a [pyenv](https://github.com/pyenv/pyenv/) plugin that allows you to update all packages of particular or all pyenv environments excluding *system*. It supports both *conda*- and *pip*-based environments.
+This is a [pyenv](https://github.com/pyenv/pyenv/) plugin that allows you to update all packages of particular or all pyenv environments excluding *system*. It supports both *conda*- and *pip*-based environments. You can read more about the plugin and its implementation details in [this article](https://zhauniarovich.com/post/2020/2020-10-why-pyenv-pip-upgrade/).
 
 
 ## Usage
