@@ -104,7 +104,9 @@ while [[ $# -gt 0 ]]; do
       # check if argument is among pyenv versions
       # if printf '%s\n' "${pyenvs[@]}" | grep -q --line-regexp "${argument}"; then
       if elementIn "${argument}" "${pyenvs[@]}"; then
-        pyenvs_to_update+=( "$argument" )
+        if ! elementIn "${argument}" "${pyenvs_to_update[@]}"; then
+          pyenvs_to_update+=( "$argument" )
+        fi
       else
         invalid_args+=( "$argument" )
       fi
@@ -132,9 +134,6 @@ else
     __msg_error "At least one environment should be selected"
     pyenv-help pip-upgrade >&2
     exit 1
-  else
-    # leaving only unique environment names
-    pyenvs_to_update=( "$(echo "${pyenvs_to_update[@]}" | tr ' ' '\n' | uniq | tr '\n' ' ')" )
   fi
 fi
 
