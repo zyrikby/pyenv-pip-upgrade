@@ -147,7 +147,7 @@ for pyenv_to_update in "${pyenvs_to_update[@]}"; do
   # conda environment at first.
   if conda >/dev/null 2>&1; then
       __msg_info "Updating conda environment: ${pyenv_to_update}..."
-      conda update --all
+      conda update --all -y
       # in conda there could be packages installed with pip
       pip_upgrade_packages
   elif pip >/dev/null 2>&1; then
