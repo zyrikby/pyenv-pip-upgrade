@@ -113,17 +113,33 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ $all_envs == true && ${#invalid_args[@]} == 0 && ${#pyenvs_to_update[@]} == 0 ]]; then
-  pyenvs_to_update=( "${pyenvs[@]}" )
-fi
-
 if [[ ${#invalid_args[@]} -gt 0 ]]; then
-  __msg_error "Invalid environments entered: $(IFS=$' '; echo "${invalid_args[*]}")"
+  __msg_error "Invalid arguments detected: $(IFS=$' '; echo "${invalid_args[*]}")"
   pyenv-help pip-upgrade >&2
   exit 1
 fi
 
+if [[ $all_envs == true ]]; then
+  if [[ ${#pyenvs_to_update[@]} -eq 0 ]]; then
+    pyenvs_to_update=( "${pyenvs[@]}" )
+  else
+    __msg_error "You cannot update --all and particular environments simultaneously"
+    pyenv-help pip-upgrade >&2
+    exit 1
+  fi
+else
+  if [[ ${#pyenvs_to_update[@]} -eq 0 ]]; then
+    __msg_error "At least one environment should be selected"
+    pyenv-help pip-upgrade >&2
+    exit 1
+  else
+    # leaving only unique environment names
+    pyenvs_to_update=( "$(echo "${pyenvs_to_update[@]}" | tr ' ' '\n' | uniq | tr '\n' ' ')" )
+  fi
+fi
+
 __msg_info "Pyenvs to update: $(IFS=$' '; echo "${pyenvs_to_update[*]}")"
+exit
 for pyenv_to_update in "${pyenvs_to_update[@]}"; do
   __msg_info "Updating packages of '${pyenv_to_update}'..."
   export PYENV_VERSION=${pyenv_to_update}
