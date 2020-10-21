@@ -139,7 +139,6 @@ else
 fi
 
 __msg_info "Pyenvs to update: $(IFS=$' '; echo "${pyenvs_to_update[*]}")"
-exit
 for pyenv_to_update in "${pyenvs_to_update[@]}"; do
   __msg_info "Updating packages of '${pyenv_to_update}'..."
   export PYENV_VERSION=${pyenv_to_update}
