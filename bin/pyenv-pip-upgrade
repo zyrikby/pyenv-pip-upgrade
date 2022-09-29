@@ -5,22 +5,22 @@
 # Usage: pyenv pip-upgrade [OPTIONS] <pyenv_env1> [<pyenv_env2> ...]
 #        pyenv pip-upgrade [OPTIONS] --all
 #
-# This command update all packages to the latest versions of particular or all 
-# pyenv environments excluding system. By default, pip-upgrade update all 
-# outdated packages of an environment at once. New pip versions will generate an 
-# error if the environment contains packages with conflicting dependencies. In 
-# this case, you can add option '--sequential' to update packages sequentially, 
-# however, the lately updated package will have precedence in this case 
-# overriding the dependencies of the packages updated before.  
-# 
-# ARGUMENTS: 
+# This command update all packages to the latest versions of particular or all
+# pyenv environments excluding system. By default, pip-upgrade update all
+# outdated packages of an environment at once. New pip versions will generate an
+# error if the environment contains packages with conflicting dependencies. In
+# this case, you can add option '--sequential' to update packages sequentially,
+# however, the lately updated package will have precedence in this case
+# overriding the dependencies of the packages updated before.
+#
+# ARGUMENTS:
 #   --all - to update all environments
-# 
+#
 # OPTIONS:
 #   --sequential - update all outdated packages one by one
 
 # setting bash strict mode
-set -o errexit 
+set -o errexit
 set -o pipefail
 set -o nounset
 IFS=$'\n\t'
@@ -45,22 +45,18 @@ function __conda () {
   pyenv exec conda ${@}
 }
 
-function elementIn () {
-  local elem="$1"   # Save first argument in a variable
-  shift            # Shift all arguments to the left (original $1 gets lost)
-  local arr=("$@") # Rebuild the array with rest of arguments
-  if printf '%s\n' "${arr[@]}" | grep -q --line-regexp "${elem}"; then
-    return 0
-  fi
+function __element_in () {
+  # https://stackoverflow.com/a/8574392/2089675
+  local elem needle="$1"  # Save first argument in a variable
+  shift                   # Shift all arguments to the left (original $1 gets lost)
+  for elem; do [[ "$elem" == "$needle" ]] && return 0; done
   return 1
 }
 
 function pip_upgrade_packages () {
   # https://stackoverflow.com/a/3452888/1108213
   local outdated_packages=()
-  while IFS='' read -r line; do 
-    outdated_packages+=("$line"); 
-  done < <(__pip list --outdated --format=freeze 2>/dev/null | grep -v '^-e' | cut -d = -f 1)
+  readarray -t outdated_packages < <(__pip list --outdated --format=freeze 2>/dev/null | awk 'match($0, /^(.+?)==/, arr) {print arr[1]}')
   if [[ ${#outdated_packages[@]} -eq 0 ]]; then
     __msg_info "Nothing to update in this environment..."
     return
@@ -80,12 +76,10 @@ function pip_upgrade_packages () {
 # --bare - allows to skip system installation
 # --skip-aliases - skips environment aliases (speeding up updates by skipping aliases)
 pyenvs=()
-while IFS='' read -r line; do 
-  pyenvs+=("$line"); 
-done < <(pyenv versions --bare --skip-aliases)
+readarray -t pyenvs < <(pyenv versions --bare --skip-aliases)
 
 # Provide pyenv completions
-if [ "$1" = "--complete" ]; then
+if [ "${1:-}" = "--complete" ]; then
   echo "--all" # add '--all' as completion option
   echo "--sequential"
   echo "${pyenvs[@]}"
@@ -111,8 +105,8 @@ while [[ $# -gt 0 ]]; do
     *) # unknown option - assume that this is pyenv environment name
       # check if argument is among pyenv versions
       # if printf '%s\n' "${pyenvs[@]}" | grep -q --line-regexp "${argument}"; then
-      if elementIn "${argument}" "${pyenvs[@]}"; then
-        if ! elementIn "${argument}" "${pyenvs_to_update[@]}"; then
+      if __element_in "${argument}" "${pyenvs[@]}"; then
+        if ! __element_in "${argument}" "${pyenvs_to_update[@]}"; then
           pyenvs_to_update+=( "$argument" )
         fi
       else
